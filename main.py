@@ -1,14 +1,18 @@
 from pathlib import Path
 
-from cla import Parser
+from tree import Parser
 
 if __name__ == '__main__':
-    project = Path('/Users/sergeygavrilov/PycharmProjects/ids_fssp')
-    report_dest = Path.cwd() / 'ids_fssp_tree.csv'
+    mac_dir = '/Users/sergeygavrilov/PycharmProjects/ids_fssp'
+    venv_dir = '/home/newander/PycharmProjects/etl_scheduler/dags'
+
+    project = Path(venv_dir)
+    report_dest = Path.cwd() / 'result.csv'
 
     parser = Parser(project)
     parser.extract_tree()
+    parser.build_tree()
 
     print(parser)
-    # parser.build_tree()
+    parser.root.modules[7].get_imports()
     # parser.create_report(report_dest)
