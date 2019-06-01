@@ -7,12 +7,16 @@ class Module:
     """
         One python module
     """
+    magic_methods = ('__init__', '__call__', )
+
     def __init__(self, path: Path):
         self.path = path
         self.content = self.path.open('r', encoding='utf-8').readlines()
 
         # Module content
         self.imports = list()
+        self.classes = list()
+        self.functions = list()
 
     def __repr__(self):
         return f'Module {self.path}'
@@ -36,6 +40,31 @@ class Module:
         except StopIteration:
             ...
 
+    def parse_classes(self):
+        for line in self.content:
+            parsed = list(line.split())
+
+            if not parsed:
+                continue
+
+            if 'class' == parsed[0]:
+                class_name = parsed[1]
+                idx = max((class_name.find(':'), class_name.find('(')))
+                self.classes.append(class_name[:idx])
+
+    def parse_functions(self):
+        for line in self.content:
+            parsed = list(line.split())
+
+            if not parsed:
+                continue
+
+            if 'def' == parsed[0] and 'self' not in line:
+                fun_name = parsed[1]
+                fun_name = fun_name[:fun_name.find('(')]
+
+                if fun_name not in self.magic_methods:
+                    self.functions.append(fun_name)
 
     def parse_imports(self):
         """ Read all imported objects in the module """
@@ -66,7 +95,7 @@ class Module:
         ]
 
     def get_imports(self):
-        return [i for i in self.imports]
+        return self.imports
 
 
 class Folder:
@@ -119,8 +148,8 @@ class Folder:
         """ Parse all import definitions """
         for module in self.modules:
             module.parse_imports()
-            # module.parse_classes()
-            # module.parse_functions()
+            module.parse_classes()
+            module.parse_functions()
 
         for folder in self.sub_folders:
             folder.parse_modules()
@@ -141,10 +170,16 @@ class Folder:
             folder.calculate_import_range()
 
 
+class Linker:
+    def __init__(self):
+        ...
+
+
 class Parser:
     def __init__(self, project: Path):
         self.project = project
         self.root = Folder(dir_path=self.project, root_path=self.project)
+        self.linker = Linker()
 
     def __repr__(self):
         return f'Parser on {self.project} with {self.root.calculate_dirs()} dirs ' \
