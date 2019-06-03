@@ -1,6 +1,38 @@
+from copy import deepcopy
 from itertools import zip_longest
 from pathlib import Path
-from typing import List
+from typing import List, Dict
+
+import pandas as pd
+
+
+def make_relative_import(local_path, root_path):
+    """ Fill `self.import_range` attribute as classic import """
+    import_range = []
+
+    for local, root in zip_longest(local_path.parts, root_path.parts):
+        if root is None:
+            suffix_idx = local.rfind('.')
+
+            if suffix_idx != -1:
+                local = local[:suffix_idx]
+
+            import_range.append(local)
+
+    return '.'.join(import_range) if import_range else f'{local_path.name}'
+
+
+def fit_lists_one_size(dict_with_lists: Dict[str, List]):
+    new_dict = deepcopy(dict_with_lists)
+
+    max_size = max(len(lst) for lst in new_dict.values())
+
+    for lst_key in new_dict:
+        new_dict[lst_key].extend(
+            [''] * (max_size - len(new_dict[lst_key]))
+        )
+
+    return new_dict
 
 
 class Module:
@@ -9,8 +41,9 @@ class Module:
     """
     magic_methods = ('__init__', '__call__', )
 
-    def __init__(self, path: Path):
+    def __init__(self, path: Path, project_root: Path):
         self.path = path
+        self.abs_import = make_relative_import(path, project_root)
         self.content = self.path.open('r', encoding='utf-8').readlines()
 
         # Module content
@@ -139,7 +172,9 @@ class Folder:
                     file.name not in Folder.ignore_list:
                 self.sub_folders.append(Folder(dir_path=obj_path, root_path=self.root_path))
             elif file.suffix == '.py':
-                self.modules.append(Module(path=obj_path))
+                self.modules.append(
+                    Module(path=obj_path, project_root=self.root_path)
+                )
 
         for folder in self.sub_folders:
             folder.parse_dir()
@@ -154,32 +189,52 @@ class Folder:
         for folder in self.sub_folders:
             folder.parse_modules()
 
-    def fill_import_range(self):
-        """ Fill `self.import_range` attribute as classic import """
-        for local, root in zip_longest(self.path.parts, self.root_path.parts):
-            if root is None:
-                self.import_range += f'.{local}'
-
-        self.import_range = self.import_range or f'{self.path.name}'
-
     def calculate_import_range(self):
         """ Recursive import range definition through the tree """
-        self.fill_import_range()
+        self.import_range = make_relative_import(self.path, self.root_path)
 
         for folder in self.sub_folders:
             folder.calculate_import_range()
 
 
 class Linker:
-    def __init__(self):
-        ...
+    """ Consists links between modules in the project:
+        Imports, classes and functions
+    """
+
+    def __init__(self, root: Folder):
+        self.root = root
+        self.relations = dict(
+            imports={},
+            classes={},
+            functions={}
+        )
+
+    def __repr__(self):
+        return f'Linker for {len(self.relations)} modules in {self.root} project'
+
+    def link_module(self, module: Module):
+        if module.abs_import in self.relations['imports']:
+            raise Exception('Duplicated module in the relations!')
+
+        self.relations['imports'][module.abs_import] = module.imports
+
+    def link_folder(self, folder: Folder):
+        for module in folder.modules:
+            self.link_module(module)
+
+        for sub_folder in folder.sub_folders:
+            self.link_folder(sub_folder)
+
+    def build_import_tree(self):
+        self.link_folder(self.root)
 
 
 class Parser:
     def __init__(self, project: Path):
         self.project = project
         self.root = Folder(dir_path=self.project, root_path=self.project)
-        self.linker = Linker()
+        self.linker = Linker(self.root)
 
     def __repr__(self):
         return f'Parser on {self.project} with {self.root.calculate_dirs()} dirs ' \
@@ -188,6 +243,16 @@ class Parser:
     def extract_tree(self):
         self.root.parse_dir()
 
-    def build_tree(self):
+    def gather_objects(self):
         self.root.calculate_import_range()
         self.root.parse_modules()
+
+    def build_link_list(self):
+        self.linker.build_import_tree()
+
+    def create_report(self, result_dir: Path):
+        pd.DataFrame(
+            fit_lists_one_size(self.linker.relations['imports'])
+        ).to_csv(
+            result_dir / 'imports.csv', index=False
+        )
