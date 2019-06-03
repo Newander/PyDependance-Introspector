@@ -1,6 +1,9 @@
+from copy import deepcopy
 from itertools import zip_longest
 from pathlib import Path
-from typing import List
+from typing import List, Dict
+
+import pandas as pd
 
 
 def make_relative_import(local_path, root_path):
@@ -17,6 +20,19 @@ def make_relative_import(local_path, root_path):
             import_range.append(local)
 
     return '.'.join(import_range) if import_range else f'{local_path.name}'
+
+
+def fit_lists_one_size(dict_with_lists: Dict[str, List]):
+    new_dict = deepcopy(dict_with_lists)
+
+    max_size = max(len(lst) for lst in new_dict.values())
+
+    for lst_key in new_dict:
+        new_dict[lst_key].extend(
+            [''] * (max_size - len(new_dict[lst_key]))
+        )
+
+    return new_dict
 
 
 class Module:
@@ -153,18 +169,26 @@ class Folder:
 
 
 class Linker:
+    """ Consists links between modules in the project:
+        Imports, classes and functions
+    """
+
     def __init__(self, root: Folder):
         self.root = root
-        self.relations = {}
+        self.relations = dict(
+            imports={},
+            classes={},
+            functions={}
+        )
 
     def __repr__(self):
         return f'Linker for {len(self.relations)} modules in {self.root} project'
 
     def link_module(self, module: Module):
-        if module.abs_import in self.relations:
+        if module.abs_import in self.relations['imports']:
             raise Exception('Duplicated module in the relations!')
 
-        self.relations[module.abs_import] = module.imports
+        self.relations['imports'][module.abs_import] = module.imports
 
     def link_folder(self, folder: Folder):
         for module in folder.modules:
@@ -196,3 +220,10 @@ class Parser:
 
     def build_link_list(self):
         self.linker.build_import_tree()
+
+    def create_report(self, result_dir: Path):
+        pd.DataFrame(
+            fit_lists_one_size(self.linker.relations['imports'])
+        ).to_csv(
+            result_dir / 'imports.csv', index=False
+        )
