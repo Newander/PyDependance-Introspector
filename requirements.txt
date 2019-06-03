@@ -3,3 +3,4 @@ ipython
 plotly
 jupyter
 networkx
+matplotlib
