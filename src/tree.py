@@ -180,35 +180,14 @@ class Folder:
         for folder in self.sub_folders:
             folder.calculate_import_range()
 
+    def get_folder_names(self):
+        yield self.import_range
 
-class Linker:
-    """ Consists links between modules in the project:
-        Imports, classes and functions
-    """
+        for folder_module in self.sub_folders:
+            yield from folder_module.get_folder_names()
 
-    def __init__(self, root: Folder):
-        self.root = root
-        self.relations = dict(
-            imports={},
-            classes={},
-            functions={}
-        )
+    def get_module_names(self):
+        yield from (module.abs_import for module in self.modules)
 
-    def __repr__(self):
-        return f'Linker for {len(self.relations)} modules in {self.root} project'
-
-    def link_module(self, module: Module):
-        if module.abs_import in self.relations['imports']:
-            raise Exception('Duplicated module in the relations!')
-
-        self.relations['imports'][module.abs_import] = module.imports
-
-    def link_folder(self, folder: Folder):
-        for module in folder.modules:
-            self.link_module(module)
-
-        for sub_folder in folder.sub_folders:
-            self.link_folder(sub_folder)
-
-    def build_import_tree(self):
-        self.link_folder(self.root)
+        for folder_module in self.sub_folders:
+            yield from folder_module.get_module_names()
