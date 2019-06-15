@@ -2,6 +2,8 @@ from itertools import zip_longest
 from pathlib import Path
 from typing import List
 
+from src.objects import Class
+
 
 def make_relative_import(local_path, root_path):
     """ Fill `self.import_range` attribute as classic import """
@@ -28,7 +30,11 @@ class Module:
     def __init__(self, path: Path, project_root: Path):
         self.path = path
         self.abs_import = make_relative_import(path, project_root)
-        self.content = self.path.open('r', encoding='utf-8').readlines()
+
+        # Remove all empty lines
+        self.content = list(
+            filter(str.strip, self.path.open('r', encoding='utf-8').readlines())
+        )
 
         # Module content
         self.imports = list()
@@ -58,16 +64,16 @@ class Module:
             ...
 
     def parse_classes(self):
-        for line in self.content:
+        for i, line in enumerate(self.content):
             parsed = list(line.split())
 
             if not parsed:
                 continue
 
             if 'class' == parsed[0]:
-                class_name = parsed[1]
-                idx = max((class_name.find(':'), class_name.find('(')))
-                self.classes.append(class_name[:idx])
+                self.classes.append(
+                    Class.parse(self.content[i:])
+                )
 
     def parse_functions(self):
         for line in self.content:
