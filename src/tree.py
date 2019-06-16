@@ -1,8 +1,9 @@
+import typing as t
+from functools import partial
 from itertools import zip_longest
 from pathlib import Path
-from typing import List
 
-from src.objects import Class
+from src.objects import Class, Function, object_parser
 
 
 def make_relative_import(local_path, root_path):
@@ -64,30 +65,23 @@ class Module:
             ...
 
     def parse_classes(self):
-        for i, line in enumerate(self.content):
-            parsed = list(line.split())
+        def class_handler(line: str, iterator: t.Iterator):
+            cls, end_line = Class.parse(line, iterator, self.abs_import)
+            self.classes.append(cls)
+            return end_line
 
-            if not parsed:
-                continue
+        i_content = iter(self.content)
 
-            if 'class' == parsed[0]:
-                self.classes.append(
-                    Class.parse(self.content[i:])
-                )
+        object_parser(
+            i_content, class_handler, lambda parsed: parsed[0] == 'class'
+        )
 
     def parse_functions(self):
-        for line in self.content:
-            parsed = list(line.split())
-
-            if not parsed:
-                continue
-
-            if 'def' == parsed[0] and 'self' not in line:
-                fun_name = parsed[1]
-                fun_name = fun_name[:fun_name.find('(')]
-
-                if fun_name not in self.magic_methods:
-                    self.functions.append(fun_name)
+        i_content = iter(self.content)
+        fun_handler = partial(
+            Function.handler, functions=self.functions, abs_module_import_path=self.abs_import
+        )
+        object_parser(i_content, fun_handler, Function.condition)
 
     def parse_imports(self):
         """ Read all imported objects in the module """
