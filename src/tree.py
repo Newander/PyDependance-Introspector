@@ -22,6 +22,26 @@ def make_relative_import(local_path, root_path):
     return '.'.join(import_range) if import_range else f'{local_path.name}'
 
 
+def count_pars(line):
+    pars_count = 0
+    skip = ''
+
+    for sym in line:
+        if sym in ('"', "'"):
+            if skip and skip[-1] == sym:
+                    skip = skip[:-1]
+            else:
+                skip += sym
+
+        elif not skip:
+            if sym == '(':
+                pars_count += 1
+            elif sym == ')':
+                pars_count -= 1
+
+    return pars_count
+
+
 class Module:
     """
         One python module
@@ -33,9 +53,23 @@ class Module:
         self.abs_import = make_relative_import(path, project_root)
 
         # Remove all empty lines
-        self.content = list(
-            filter(str.strip, self.path.open('r', encoding='utf-8').readlines())
-        )
+        self.content = []
+        handled_line = []
+        for line in self.path.open('r', encoding='utf-8').readlines():
+            stripped = line.strip(' \n\t')
+            if not stripped:
+                continue
+
+            handled_line.append((line.count('('), line))
+
+            # вместо этого посчитать число скобок
+            if stripped[0] in many_lines_front:
+                continue
+            if stripped[-1] in many_lines_end:
+                continue
+
+            self.content.append(''.join(handled_line))
+            handled_line = []
 
         # Module content
         self.imports = list()
@@ -127,8 +161,8 @@ class Folder:
 
         self.import_range = ''
 
-        self.sub_folders: List[Folder] = []
-        self.modules: List[Module] = []
+        self.sub_folders: t.List[Folder] = []
+        self.modules: t.List[Module] = []
 
     def __repr__(self):
         return f'Folder {self.path}'
