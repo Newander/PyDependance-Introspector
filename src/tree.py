@@ -3,7 +3,7 @@ from functools import partial
 from itertools import zip_longest
 from pathlib import Path
 
-from src.objects import Class, Function, object_parser
+from src.objects import Class, CodeLine, Function, object_parser
 
 
 def make_relative_import(local_path, root_path):
@@ -22,14 +22,16 @@ def make_relative_import(local_path, root_path):
     return '.'.join(import_range) if import_range else f'{local_path.name}'
 
 
-def count_pars(line):
+def count_pars(line: str):
+    """ Counts the closed and opened parentheses in gotten line
+    """
     pars_count = 0
     skip = ''
 
     for sym in line:
         if sym in ('"', "'"):
             if skip and skip[-1] == sym:
-                    skip = skip[:-1]
+                skip = skip[:-1]
             else:
                 skip += sym
 
@@ -54,22 +56,28 @@ class Module:
 
         # Remove all empty lines
         self.content = []
-        handled_line = []
-        for line in self.path.open('r', encoding='utf-8').readlines():
-            stripped = line.strip(' \n\t')
-            if not stripped:
-                continue
+        line = ''
+        i_file = self.path.open('r', encoding='utf-8')
 
-            handled_line.append((line.count('('), line))
+        while True:
+            try:
+                line = next(i_file)
+                stripped = line.strip(' \n\t')
 
-            # вместо этого посчитать число скобок
-            if stripped[0] in many_lines_front:
-                continue
-            if stripped[-1] in many_lines_end:
-                continue
+                if not stripped:
+                    continue
 
-            self.content.append(''.join(handled_line))
-            handled_line = []
+                while count_pars(line):
+                    line += next(i_file)
+
+                self.content.append(
+                    CodeLine(line.replace('\n', ''))
+                )
+            except StopIteration:
+                if line:
+                    self.content.append(CodeLine(line))
+
+                break
 
         # Module content
         self.imports = list()

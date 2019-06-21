@@ -1,17 +1,10 @@
 import typing as t
+from collections import UserString
 from functools import partial
 
 
-def extract_indent(code_line: str):
-    i = 0
-    for i, sim in enumerate(code_line):
-        if sim != ' ':
-            break
-    return i
-
-
 def object_parser(
-        iterator: t.Iterator[str],
+        iterator: t.Iterator['CodeLine'],
         handler: t.Callable,
         condition: t.Callable
 ):
@@ -36,9 +29,16 @@ def object_parser(
             break
 
 
+class CodeLine(UserString):
+    def __init__(self, string: str):
+        super(CodeLine, self).__init__(string)
+
+        self.indent = len(string) - len(string.lstrip(' '))
+
+
 class Obj:
     def __init__(
-            self, name: str, module_import_path: str, body: t.List[str]
+            self, name: str, module_import_path: str, body: t.List['CodeLine']
     ):
         self.path = '.'.join([module_import_path, name])
         self.name = name
@@ -50,20 +50,19 @@ class Obj:
 
     @classmethod
     def parse(cls,
-              def_line: str,
-              file_lst: t.Iterable[str],
+              def_line: 'CodeLine',
+              file_lst: t.Iterable['CodeLine'],
               abs_module_import_path: str):
         """ Extracting all info about object into new instance """
         body = []
         name = cls.parse_name(def_line)
-        start_indent = extract_indent(def_line)
 
         line = None
         for line in file_lst:
-            if extract_indent(line) == start_indent:
+            if line.indent == def_line.indent:
                 break
 
-            body.append(line[start_indent:])
+            body.append(line)
 
         return cls(name, abs_module_import_path, body), line
 
@@ -94,7 +93,7 @@ class Function(Obj):
 class Class(Obj):
     """ Representation of the Python Class """
 
-    def __init__(self, name, module_import_path, body):
+    def __init__(self, name: str, module_import_path: str, body: t.List['CodeLine']):
         super(Class, self).__init__(name, module_import_path, body)
 
         self.magic_methods: t.List[Function] = []

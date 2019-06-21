@@ -8,14 +8,17 @@ class Linker:
 
     def __init__(self, root: Folder):
         self.root = root
-        self.relations = dict(
-            imports={'library': dict(), 'project': dict()},
-            classes={},
-            functions={}
-        )
+
+        self.imports = {'library': dict(), 'project': dict()}
+        self.classes = {}
+        self.functions = {}
 
     def __repr__(self):
-        return f'Linker for {len(self.relations)} modules in {self.root} project'
+        return \
+            f'Linker have: ' \
+            f'{len(self.imports)} imports; ' \
+            f'{len(self.classes)} classes; ' \
+            f'{len(self.functions)} functions'
 
     @staticmethod
     def link_module(relations: dict, module: Module):
@@ -47,11 +50,18 @@ class Linker:
     def build_import_tree(self):
         raw_imports = {}
         folder_imports = self.link_folder(self.root, raw_imports)
-        self.relations['imports']['library'] = {
+
+        self.imports['library'] = {
             dest: imports for dest, imports in raw_imports.items()
             if dest not in folder_imports
         }
-        self.relations['imports']['project'] = {
+        self.imports['project'] = {
             dest: imports for dest, imports in raw_imports.items()
             if dest in folder_imports
         }
+
+    def build_class_tree(self):
+        ...
+
+    def build_fun_tree(self):
+        ...
