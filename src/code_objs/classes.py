@@ -1,8 +1,9 @@
 import typing as t
 from functools import partial
 
-from src.code_objs.callables import Obj
+from src.code_objs.callables import Obj, object_parser
 from src.code_objs.functions import Function
+from src.code_objs.line import CodeLine
 
 
 class Class(Obj):

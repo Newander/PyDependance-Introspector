@@ -48,9 +48,7 @@ class CodeLine(UserString):
     """ Object representation of the code essentials """
 
     @classmethod
-    def parse_line_iter(
-            cls, iter_lines: t.Iterator[str]
-    ) -> t.Union['CodeLine', 'ImportLine', None]:
+    def parse_line_iter(cls, iter_lines: t.Iterator[str]):
         """ Concatenates many-lines into one line and returning the right management object for this new CodeLine
 
         :param iter_lines: the iterable over the python module
@@ -62,13 +60,15 @@ class CodeLine(UserString):
             return None
 
         line_stack = [line]
-
-        while not check_many_liners(line, prev_pars):
-            pars = count_pars(line)
+        pars = count_pars(line)
+        while check_many_liners(line, pars):
             try:
                 line = next(iter_lines)
             except StopIteration:
                 break
+
+            pars += count_pars(line)
+            line_stack.append(line)
 
         instance = cls(
             (' '.join(line_stack)).replace('\n', '')
@@ -77,22 +77,71 @@ class CodeLine(UserString):
         if instance.has_import():
             return ImportLine(instance)
 
+        if instance.is_empty():
+            return EmptyLine(instance)
+
+        if instance.is_comment():
+            return CommentLine(instance)
+
+        if instance.have_def():
+            return FunctionLine(instance)
+
+        if instance.is_class():
+            return ClassLine(instance)
+
         return instance
 
     def __init__(self, line: str):
+        self.indent = len(line) - len(line.lstrip(' '))
+
+        line = line.rstrip(' \t\n')
+
         super(CodeLine, self).__init__(line)
 
         self.parsed = set(line.split())
-        self.indent = len(line) - len(line.lstrip(' '))
 
     def has_import(self):
-        """ Check is this line is import """
-        if 'import' in self.parsed:
-            return True
+        return 'import' in self.parsed
 
-        return False
+    def have_def(self):
+        return 'def' in self.parsed
+
+    def is_class(self):
+        return 'class' in self.parsed
+
+    def is_empty(self):
+        return not bool(self)
+
+    def is_comment(self):
+        try:
+            return self.data.lstrip(' \t')[0] == '#'
+        except IndexError:
+            return False
 
 
-class ImportLine:
+class LineType:
     def __init__(self, cline: 'CodeLine'):
         self.cline = cline
+
+    def __repr__(self):
+        return repr(self.cline)
+
+
+class ImportLine(LineType):
+    """ Manging lines with imports """
+
+
+class EmptyLine(LineType):
+    """ Managing empty lines """
+
+
+class CommentLine(LineType):
+    """ Managing comment lines """
+
+
+class ClassLine(LineType):
+    """ Managing comment lines """
+
+
+class FunctionLine(LineType):
+    """ Managing comment lines """

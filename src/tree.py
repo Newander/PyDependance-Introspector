@@ -6,7 +6,7 @@ from pathlib import Path
 from src.code_objs.callables import object_parser
 from src.code_objs.classes import Class
 from src.code_objs.functions import Function
-from src.code_objs.line import CodeLine
+from src.code_objs.line import CodeLine, ImportLine
 
 
 def make_relative_import(local_path, root_path):
@@ -27,9 +27,9 @@ def make_relative_import(local_path, root_path):
 
 class Module:
     """
-        One python module
+        One python module as code
     """
-    magic_methods = ('__init__', '__call__',)
+    magic_methods = [meth for meth in dir(type) if meth.count('__') > 1]
 
     def __init__(self, path: Path, project_root: Path):
         self.path = path
@@ -37,28 +37,15 @@ class Module:
 
         # Remove all empty lines
         self.content = []
-        line = ''
         i_file = self.path.open('r', encoding='utf-8')
 
         while True:
-            try:
-                line = next(i_file)
-                stripped = line.strip(' \n\t')
+            cline = CodeLine.parse_line_iter(i_file)
 
-                if not stripped:
-                    continue
-
-                while count_pars(line):
-                    line += next(i_file)
-
-                self.content.append(
-                    CodeLine.parse_line_iter(i_file)
-                )
-            except StopIteration:
-                if line:
-                    self.content.append(CodeLine(line))
-
+            if not cline:
                 break
+
+            self.content.append(cline)
 
         # Module content
         self.imports = list()
@@ -67,25 +54,6 @@ class Module:
 
     def __repr__(self):
         return f'Module {self.path}'
-
-    @staticmethod
-    def extract_imports(import_line):
-        iter_import = iter(import_line.split())
-        from_ = ''
-
-        try:
-            while True:
-                part = next(iter_import)
-
-                if part == 'from':
-                    from_ = next(iter_import) + '.'
-
-                elif part == 'import':
-                    while True:
-                        imported_obj = next(iter_import).replace(',', '').replace('\\', '')
-                        yield from_ + imported_obj
-        except StopIteration:
-            ...
 
     def parse_classes(self):
         def class_handler(line: str, iterator: t.Iterator):
@@ -109,27 +77,10 @@ class Module:
     def parse_imports(self):
         """ Read all imported objects in the module """
 
-        iter_lines = iter(self.content)
-        import_stack = []
-
-        try:
-            while True:
-                cline = CodeLine.parse_line_iter(iter_lines)
-
-                if cline.has_import():
-                    self.imports.append(cline)
-
-        except StopIteration:
-            ...
-
         self.imports = [
-            configured_import
-            for import_line in import_stack
-            for configured_import in self.extract_imports(import_line)
+            cline for cline in self.content
+            if isinstance(cline, ImportLine)
         ]
-
-    def get_imports(self):
-        return self.imports
 
 
 class Folder:
