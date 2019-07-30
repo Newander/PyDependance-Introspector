@@ -25,28 +25,6 @@ def make_relative_import(local_path, root_path):
     return '.'.join(import_range) if import_range else f'{local_path.name}'
 
 
-def count_pars(line: str):
-    """ Counts the closed and opened parentheses in gotten line
-    """
-    pars_count = 0
-    skip = ''
-
-    for sym in line:
-        if sym in ('"', "'"):
-            if skip and skip[-1] == sym:
-                skip = skip[:-1]
-            else:
-                skip += sym
-
-        elif not skip:
-            if sym == '(':
-                pars_count += 1
-            elif sym == ')':
-                pars_count -= 1
-
-    return pars_count
-
-
 class Module:
     """
         One python module
@@ -74,7 +52,7 @@ class Module:
                     line += next(i_file)
 
                 self.content.append(
-                    CodeLine(line.replace('\n', ''))
+                    CodeLine.parse_line_iter(i_file)
                 )
             except StopIteration:
                 if line:
