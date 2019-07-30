@@ -4,7 +4,7 @@ from typing import Dict, List
 
 import pandas as pd
 
-from src.graph_draw import GraphManager
+from src.drawer import GraphManager
 from src.linker import Linker
 from src.tree import Folder
 
@@ -23,6 +23,8 @@ def fit_lists_one_size(dict_with_lists: Dict[str, List]):
 
 
 class Parser:
+    """ High level object to composite all the objects in code """
+
     def __init__(self, project: Path):
         self.project = project
         self.root = Folder(dir_path=self.project, root_path=self.project)

@@ -3,7 +3,10 @@ from functools import partial
 from itertools import zip_longest
 from pathlib import Path
 
-from src.objects import Class, CodeLine, Function, object_parser
+from src.code_objs.callables import object_parser
+from src.code_objs.classes import Class
+from src.code_objs.functions import Function
+from src.code_objs.line import CodeLine
 
 
 def make_relative_import(local_path, root_path):
@@ -133,17 +136,11 @@ class Module:
 
         try:
             while True:
-                line = next(iter_lines)
-                parsed = set(line.split())
+                cline = CodeLine.parse_line_iter(iter_lines)
 
-                if 'import' in parsed:
-                    import_stack.append(line)
+                if cline.has_import():
+                    self.imports.append(cline)
 
-                    if '\\' in parsed or '(' in parsed:
-                        while '\\' in parsed or ')' in parsed:
-                            line = next(iter_lines)
-                            parsed = set(line.split())
-                            import_stack[-1] += line
         except StopIteration:
             ...
 

@@ -5,13 +5,7 @@ import sys
 from src.parser import Parser
 
 if __name__ == '__main__':
-    mac_dir = '/Users/sergeygavrilov/PycharmProjects/ids_fssp'
-    scheduler_dir = '/home/newander/PycharmProjects/etl_scheduler/dags'
-    matcher_dir = '/home/newander/PycharmProjects/profiler_matcher'
-
     project = Path(sys.argv[1])
-    report_dest = Path.cwd()
-
     parser = Parser(project)
 
     parser.extract_tree()
