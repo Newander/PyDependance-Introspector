@@ -122,13 +122,40 @@ class CodeLine(UserString):
 class LineType:
     def __init__(self, cline: 'CodeLine'):
         self.cline = cline
+        self.indent = cline.indent
 
     def __repr__(self):
-        return repr(self.cline)
+        return ' ' * self.indent + repr(self.cline)
+
+    def __bool__(self):
+        return bool(self.cline)
 
 
 class ImportLine(LineType):
     """ Manging lines with imports """
+
+    def __init__(self, cline: 'CodeLine'):
+        super(ImportLine, self).__init__(cline)
+
+        import_list = self.cline.split()
+
+        try:
+            as_idx = import_list.index('as') + 1
+        except ValueError:
+            self.alias = None
+        else:
+            self.alias = import_list[as_idx]
+            import_list = import_list[:as_idx]
+
+        import_list = [word.strip(',') for word in import_list]
+        from_clause = import_list[0] == 'from'
+
+        if from_clause:
+            self.import_from = import_list[1]
+            self.import_what = import_list[2:]
+        else:
+            self.import_from = import_list[1]
+            self.import_what = import_list[1]
 
 
 class EmptyLine(LineType):

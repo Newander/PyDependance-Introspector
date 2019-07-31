@@ -1,6 +1,8 @@
 import typing as t
 
+from src.code_objs.line import ClassLine, EmptyLine
 from src.code_objs.line import CodeLine
+from src.code_objs.line import FunctionLine
 
 
 def object_parser(
@@ -29,7 +31,7 @@ def object_parser(
             break
 
 
-class Obj:
+class CodeObject:
     def __init__(
             self, name: str, module_import_path: str, body: t.List['CodeLine']
     ):
@@ -37,24 +39,28 @@ class Obj:
         self.name = name
         self.body = body
 
+    def __repr__(self):
+        return f'{self.__class__.__name__} {self.name} at {self.path}'
+
     @classmethod
     def parse_name(cls, def_line):
         raise NotImplementedError
 
     @classmethod
     def parse(cls,
-              def_line: 'CodeLine',
-              file_lst: t.Iterable['CodeLine'],
+              def_line: 't.Union[ClassLine, FunctionLine, CodeLine]',
+              file_lst: 't.Iterable[t.Union[ClassLine, FunctionLine, CodeLine]]',
               abs_module_import_path: str):
         """ Extracting all info about object into new instance """
         body = []
         name = cls.parse_name(def_line)
 
-        line = None
-        for line in file_lst:
-            if line.indent == def_line.indent:
+        mline = None
+        for mline in file_lst:
+            if not isinstance(mline, EmptyLine) and \
+                    mline.indent == def_line.indent:
                 break
 
-            body.append(line)
+            body.append(mline)
 
-        return cls(name, abs_module_import_path, body), line
+        return cls(name, abs_module_import_path, body), mline

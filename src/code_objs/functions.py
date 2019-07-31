@@ -1,9 +1,10 @@
 import typing as t
 
-from src.code_objs.callables import Obj
+from src.code_objs.callables import CodeObject
+from src.code_objs.line import FunctionLine
 
 
-class Function(Obj):
+class Function(CodeObject):
     """ Representation of the Python Function """
 
     @staticmethod
@@ -20,7 +21,7 @@ class Function(Obj):
         return all(['def' == parsed[0], 'self' not in parsed[1]])
 
     @classmethod
-    def parse_name(cls, def_line):
-        fun_name = def_line.split()[1]
+    def parse_name(cls, def_line: 'FunctionLine'):
+        fun_name = def_line.cline.split()[1]
         idx = fun_name.find('(')
         return fun_name[:idx]

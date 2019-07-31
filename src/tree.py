@@ -1,12 +1,10 @@
 import typing as t
-from functools import partial
 from itertools import zip_longest
 from pathlib import Path
 
-from src.code_objs.callables import object_parser
 from src.code_objs.classes import Class
 from src.code_objs.functions import Function
-from src.code_objs.line import CodeLine, ImportLine
+from src.code_objs.line import ClassLine, CodeLine, FunctionLine, ImportLine
 
 
 def make_relative_import(local_path, root_path):
@@ -29,7 +27,6 @@ class Module:
     """
         One python module as code
     """
-    magic_methods = [meth for meth in dir(type) if meth.count('__') > 1]
 
     def __init__(self, path: Path, project_root: Path):
         self.path = path
@@ -42,7 +39,7 @@ class Module:
         while True:
             cline = CodeLine.parse_line_iter(i_file)
 
-            if not cline:
+            if cline is None:
                 break
 
             self.content.append(cline)
@@ -56,23 +53,32 @@ class Module:
         return f'Module {self.path}'
 
     def parse_classes(self):
-        def class_handler(line: str, iterator: t.Iterator):
-            cls, end_line = Class.parse(line, iterator, self.abs_import)
-            self.classes.append(cls)
-            return end_line
+        """ Creates Class objects for all modules from the ClassLines
+        """
+        line_iter = iter(self.content)
+        while True:
+            try:
+                cline = next(line_iter)
+            except StopIteration:
+                break
 
-        i_content = iter(self.content)
-
-        object_parser(
-            i_content, class_handler, lambda parsed: parsed[0] == 'class'
-        )
+            if isinstance(cline, ClassLine):
+                cls, end_line = Class.parse(cline, line_iter, self.abs_import)
+                self.classes.append(cls)
 
     def parse_functions(self):
-        i_content = iter(self.content)
-        fun_handler = partial(
-            Function.handler, functions=self.functions, abs_module_import_path=self.abs_import
-        )
-        object_parser(i_content, fun_handler, Function.condition)
+        """ Creates Function objects for all modules from the FunctionLines
+        """
+        line_iter = iter(self.content)
+        while True:
+            try:
+                cline = next(line_iter)
+            except StopIteration:
+                break
+
+            if isinstance(cline, FunctionLine):
+                cls, end_line = Function.parse(cline, line_iter, self.abs_import)
+                self.functions.append(cls)
 
     def parse_imports(self):
         """ Read all imported objects in the module """

@@ -10,8 +10,8 @@ if __name__ == '__main__':
 
     parser.extract_tree()
     parser.gather_objects()
-
     parser.build_link_list()
+
     # parser.create_report(report_dest)
 
     # import_graph = parser.create_import_graph()

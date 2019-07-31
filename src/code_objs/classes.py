@@ -1,13 +1,15 @@
 import typing as t
 from functools import partial
 
-from src.code_objs.callables import Obj, object_parser
+from src.code_objs.callables import CodeObject, object_parser
 from src.code_objs.functions import Function
+from src.code_objs.line import ClassLine, FunctionLine
 from src.code_objs.line import CodeLine
 
 
-class Class(Obj):
+class Class(CodeObject):
     """ Representation of the Python Class """
+    magic_method_names = [meth for meth in dir(type) if meth.count('__') > 1]
 
     def __init__(self, name: str, module_import_path: str, body: t.List['CodeLine']):
         super(Class, self).__init__(name, module_import_path, body)
@@ -16,19 +18,20 @@ class Class(Obj):
         self.methods: t.List[Function] = []
 
         functions: t.List[Function] = []
-        i_body = iter(body)
-        fun_handler = partial(
-            Function.handler, functions=functions, abs_module_import_path=self.path
-        )
 
+        line_iter = iter(body)
         while True:
             try:
-                object_parser(i_body, fun_handler, Function.condition)
+                cline = next(line_iter)
             except StopIteration:
                 break
 
+            if isinstance(cline, FunctionLine):
+                cls, end_line = Function.parse(cline, line_iter, self.path)
+                functions.append(cls)
+
         for fun in functions:
-            if fun.name.count('__') > 1:
+            if fun.name in self.magic_method_names:
                 self.magic_methods.append(fun)
             else:
                 self.methods.append(fun)
@@ -36,7 +39,7 @@ class Class(Obj):
         del functions
 
     @classmethod
-    def parse_name(cls, def_line):
-        class_name = def_line.split()[1]
+    def parse_name(cls, def_line: 'ClassLine'):
+        class_name = def_line.cline.split()[1]
         idx = max((class_name.find(':'), class_name.find('(')))
         return class_name[:idx]
