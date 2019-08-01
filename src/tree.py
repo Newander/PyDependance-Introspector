@@ -27,6 +27,9 @@ class Module:
     """
         One python module as code
     """
+    imports: t.List[ImportLine]
+    classes: t.List[Class]
+    functions: t.List[Function]
 
     def __init__(self, path: Path, project_root: Path):
         self.path = path
@@ -49,8 +52,21 @@ class Module:
         self.classes = list()
         self.functions = list()
 
+    def __hash__(self):
+        return hash(str(self.path))
+
     def __repr__(self):
         return f'Module {self.path}'
+
+    def get_object_by_name(self, obj_name):
+        """ Вытащить объект по его имени """
+
+        for obj_list in [self.classes, self.functions]:
+            for obj in obj_list:
+                if obj.name == obj_name:
+                    return obj
+
+        raise KeyError
 
     def parse_classes(self):
         """ Creates Class objects for all modules from the ClassLines

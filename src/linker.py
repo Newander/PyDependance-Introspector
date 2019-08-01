@@ -1,67 +1,64 @@
+from collections import UserDict, UserString, defaultdict
+
 from src.tree import Folder, Module
 
 
-class Linker:
+class Linker(UserDict):
     """ Consists links between modules in the project:
         Imports, classes and functions
     """
+    root: Folder
 
-    def __init__(self, root: Folder):
+    def __init__(self, root, *args, **kwargs):
+        super(Linker, self).__init__(*args, **kwargs)
+
         self.root = root
-
-        self.imports = {'library': dict(), 'project': dict()}
-        self.classes = {}
-        self.functions = {}
+        self.libraries = set()
 
     def __repr__(self):
         return \
-            f'Linker have: ' \
-            f'{len(self.imports)} imports; ' \
-            f'{len(self.classes)} classes; ' \
-            f'{len(self.functions)} functions'
+            f'Project {self.root}'
 
-    @staticmethod
-    def link_module(relations: dict, module: Module):
-        if module.abs_import in relations:
-            raise Exception('Duplicated module in the relations!')
+    def get_module_by_import(self, abs_import) -> Module:
+        return self[abs_import]['module']
 
-        relations[module.abs_import] = module.imports
+    def gather_modules(self, folder: Folder = None):
+        """ Extract all the modules into self dict object """
+        folder = folder or self.root
 
-        return relations
-
-    def link_folder(self, folder: Folder, relations: dict):
-        """ Probably unsafe operations over the `relations` dict, but...
-
-        :param folder:
-        :param relations:
-        :return:
-        """
-        folders = [folder.import_range]
         for module in folder.modules:
-            self.link_module(relations, module)
+            self[module.abs_import] = {
+                'module': module,
+                'imports': []
+            }
 
         for sub_folder in folder.sub_folders:
-            folders.extend(
-                self.link_folder(sub_folder, relations)
-            )
-
-        return folders
+            self.gather_modules(sub_folder)
 
     def build_import_tree(self):
-        raw_imports = {}
-        folder_imports = self.link_folder(self.root, raw_imports)
+        for module_data in self.values():
+            module = module_data['module']  # type: Module
+            for import_ in module.imports:
+                abs_import = import_.import_from
 
-        self.imports['library'] = {
-            dest: imports for dest, imports in raw_imports.items()
-            if dest not in folder_imports
-        }
-        self.imports['project'] = {
-            dest: imports for dest, imports in raw_imports.items()
-            if dest in folder_imports
-        }
+                try:
+                    imported_module = self.get_module_by_import(abs_import)
 
-    def build_class_tree(self):
-        ...
+                    self[module.abs_import]['imports'].append(
+                        dict(
+                            module=imported_module,
+                            object=[
+                                imported_module.get_object_by_name(name) for name in import_.import_what
+                            ]
+                        )
+                    )
+                except KeyError:
 
-    def build_fun_tree(self):
+                    self.libraries.add(abs_import)
+
+                    self[module.abs_import]['imports'].append(
+                        dict(module=import_.import_from, objects=import_.import_what)
+                    )
+
+    def build_function_tree(self):
         ...

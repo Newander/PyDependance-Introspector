@@ -43,7 +43,9 @@ class Parser:
         self.root.parse_modules()
 
     def build_link_list(self):
+        self.linker.gather_modules()
         self.linker.build_import_tree()
+        self.linker.build_function_tree()
 
     def create_report(self, result_dir: Path):
         pd.DataFrame(

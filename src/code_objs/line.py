@@ -152,10 +152,16 @@ class ImportLine(LineType):
 
         if from_clause:
             self.import_from = import_list[1]
-            self.import_what = import_list[2:]
+            self.import_what = import_list[3:]
         else:
-            self.import_from = import_list[1]
-            self.import_what = import_list[1]
+            import_obj = import_list[1]
+
+            if '.' not in import_obj:
+                self.import_from = import_obj
+                self.import_what = '__all__'
+            else:
+                self.import_from = '.'.join(import_obj.split('.')[:-1])
+                self.import_what = import_obj.split('.')[-1]
 
 
 class EmptyLine(LineType):
