@@ -41,5 +41,5 @@ class Class(CodeObject):
     @classmethod
     def parse_name(cls, def_line: 'ClassLine'):
         class_name = def_line.cline.split()[1]
-        idx = max((class_name.find(':'), class_name.find('(')))
+        idx = min((class_name.find(':'), class_name.find('(')))
         return class_name[:idx]

@@ -175,6 +175,11 @@ class CommentLine(LineType):
 class ClassLine(LineType):
     """ Managing comment lines """
 
+    def __init__(self, cline: 'CodeLine'):
+        super(ClassLine, self).__init__(cline)
+
+
+
 
 class FunctionLine(LineType):
     """ Managing comment lines """

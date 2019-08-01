@@ -40,7 +40,7 @@ class CodeObject:
         self.body = body
 
     def __repr__(self):
-        return f'{self.__class__.__name__} {self.name} at {self.path}'
+        return f'{self.__class__.__name__} <{self.name}> in {self.path}'
 
     @classmethod
     def parse_name(cls, def_line):
