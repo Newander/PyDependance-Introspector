@@ -101,7 +101,15 @@ class CodeLine(UserString):
         self.parsed = set(line.split())
 
     def has_import(self):
-        return 'import' in self.parsed
+        if 'import' not in self.parsed:
+            return False
+
+        ordered_parsed = self.data.split()
+
+        if 'import' == ordered_parsed[0] or ('import' == ordered_parsed[2] and 'from' == ordered_parsed[0]):
+            return True
+
+        return False
 
     def have_def(self):
         return 'def' in self.parsed
@@ -167,6 +175,8 @@ class ImportLine(LineType):
 class EmptyLine(LineType):
     """ Managing empty lines """
 
+    __name__ = 'EmptLine'
+
 
 class CommentLine(LineType):
     """ Managing comment lines """
@@ -177,8 +187,6 @@ class ClassLine(LineType):
 
     def __init__(self, cline: 'CodeLine'):
         super(ClassLine, self).__init__(cline)
-
-
 
 
 class FunctionLine(LineType):

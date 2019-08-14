@@ -5,7 +5,9 @@ from src.code_objs.line import FunctionLine
 
 
 class Function(CodeObject):
-    """ Representation of the Python Function """
+    """ Representation of the Python Function
+    todo: define is this a function or method
+    """
 
     @staticmethod
     def handler(line: str, iterator: t.Iterator, abs_module_import_path: str, functions: t.List):

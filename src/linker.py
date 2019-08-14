@@ -1,4 +1,4 @@
-from collections import UserDict, UserString, defaultdict
+from collections import UserDict
 
 from src.tree import Folder, Module
 
@@ -43,17 +43,15 @@ class Linker(UserDict):
 
                 try:
                     imported_module = self.get_module_by_import(abs_import)
-
-                    self[module.abs_import]['imports'].append(
-                        dict(
-                            module=imported_module,
-                            object=[imported_module.get_object_by_name(name) for name in import_.import_what]
-                        )
-                    )
                 except KeyError:
                     # todo: check 'src.code_objs.line' module (bug)
                     self.libraries.add(abs_import)
 
-                    self[module.abs_import]['imports'].append(
-                        dict(module=import_.import_from, objects=import_.import_what)
+                    new_import = dict(module=import_.import_from, objects=import_.import_what)
+                else:
+                    new_import = dict(
+                        module=imported_module,
+                        object=[imported_module.get_object_by_name(name) for name in import_.import_what]
                     )
+                finally:
+                    self[module.abs_import]['imports'].append(new_import)

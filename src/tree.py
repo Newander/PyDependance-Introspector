@@ -71,16 +71,23 @@ class Module:
     def parse_classes(self):
         """ Creates Class objects for all modules from the ClassLines
         """
+        if self.abs_import == 'src.code_objs.line':
+            print('catch!')
+
         line_iter = iter(self.content)
+        end_line = None
         while True:
             try:
-                cline = next(line_iter)
+                cline = next(line_iter) if end_line is None else end_line
             except StopIteration:
                 break
 
             if isinstance(cline, ClassLine):
+                # todo: problem with parsing empty(?) class declaraions in src/code_objs/line.py:167
                 cls, end_line = Class.parse(cline, line_iter, self.abs_import)
                 self.classes.append(cls)
+            else:
+                end_line = None
 
     def parse_functions(self):
         """ Creates Function objects for all modules from the FunctionLines
