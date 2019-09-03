@@ -1,1 +1,1 @@
-Выстраивает дерево зависмостей в Питоновом проекте
+CLI for building Python dependancies tree in projects
