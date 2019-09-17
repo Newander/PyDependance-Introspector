@@ -1,9 +1,6 @@
-from typing import Collection
+from collections import namedtuple
 
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-import networkx as nx
-from networkx import add_path
+from pyvis import network as net
 
 from src.linker import Linker
 
@@ -13,16 +10,23 @@ class GraphManager:
 
     def __init__(self, linker: Linker):
         self.linker = linker
-        self.graph = nx.MultiDiGraph()
 
-    def add_nodes(self, node_names: Collection):
-        add_path(self.graph, node_names)
+    def create_import_graph(self):
+        Edge = namedtuple('Edge', 'from_ to_')
+        graph = net.Network(notebook=True)
 
-        return self
+        for lib, descr in self.linker.items():
+            edges_lst = []
+            edges_new = {lib}
+            for import_ in descr['imports']:
+                to_module = str(import_['module'])
+                edges_lst.append(Edge(lib, to_module))
+                edges_new.add(to_module)
 
-    def create_edges(self, from_node: str, to_nodes: Collection[str]):
-        self.graph.add_edges_from(
-            ebunch_to_add=zip(([from_node] * len(to_nodes)), to_nodes)
-        )
+            graph.add_nodes(edges_new)
+            graph.add_edges(edges_lst)
 
-        return self
+        return graph
+
+    def save(self, graph: net.Network, path: str):
+        graph.save_graph(path)

@@ -71,9 +71,6 @@ class Module:
     def parse_classes(self):
         """ Creates Class objects for all modules from the ClassLines
         """
-        if self.abs_import == 'src.code_objs.line':
-            print('catch!')
-
         line_iter = iter(self.content)
         end_line = None
         while True:
@@ -188,3 +185,13 @@ class Folder:
 
         for folder_module in self.sub_folders:
             yield from folder_module.get_module_names()
+
+    def calculate_lines(self):
+        """ Caluclates only code lines in modules and sub folders """
+        return sum(
+            [len(module.content) for module in self.modules] +
+            [
+                folder_module.calculate_lines()
+                for folder_module in self.sub_folders
+            ]
+        )
