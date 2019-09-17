@@ -5,11 +5,14 @@ import matplotlib.pyplot as plt
 import networkx as nx
 from networkx import add_path
 
+from src.linker import Linker
+
 
 class GraphManager:
     """ Needed to create and draw graphs """
 
-    def __init__(self):
+    def __init__(self, linker: Linker):
+        self.linker = linker
         self.graph = nx.MultiDiGraph()
 
     def add_nodes(self, node_names: Collection):

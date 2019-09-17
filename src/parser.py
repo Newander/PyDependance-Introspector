@@ -29,7 +29,7 @@ class Parser:
         self.project = project
         self.root = Folder(dir_path=self.project, root_path=self.project)
         self.linker = Linker(self.root)
-        self.objects_graph = GraphManager()
+        self.import_graph = GraphManager(self.linker)
 
     def __repr__(self):
         return f'Parser on {self.project} with {self.root.calculate_dirs()} dirs ' \
@@ -54,12 +54,4 @@ class Parser:
         )
 
     def create_import_graph(self):
-        import_graph = GraphManager()
-
-        import_graph\
-            .add_nodes(self.root.get_folder_names())\
-            .add_nodes(self.root.get_module_names())
-
-        # import_graph.create_edges(self.root)
-
-        return import_graph
+        self.import_graph

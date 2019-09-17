@@ -1,6 +1,5 @@
-from pathlib import Path
-
 import sys
+from pathlib import Path
 
 from src.parser import Parser
 
@@ -12,10 +11,9 @@ if __name__ == '__main__':
     parser.gather_objects()
     parser.build_link_list()
 
-    # parser.create_report(report_dest)
+    parser.create_import_graph()
+    parser.save_import_graph(
+        '/home/newander/PycharmProjects/project_dependance_introspector/import_graph.html'
+    )
 
-    # import_graph = parser.create_import_graph()
-
-    # parser.root.modules[7].get_imports()
-    print(parser)
-
+    parser.print_stats()
