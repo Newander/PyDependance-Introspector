@@ -16,10 +16,11 @@ class GraphManager:
 
     def create_import_graph(self):
         """ Creates graph from import objects in Linker """
-        Edge = namedtuple('Edge', 'from_ to_')
+        Edge = namedtuple('Edge', 'to_ from_')
         graph = net.Network(
             height=f'{self.height}px',
             width=f'{self.width}px',
+            directed=True
         )
 
         for lib, descr in self.linker.items():
@@ -36,7 +37,7 @@ class GraphManager:
                     to_edge = str(module)
                     new_libs.add(to_edge)
 
-                edges_lst.append(Edge(lib, to_edge))
+                edges_lst.append(Edge(to_edge, lib))
 
             graph.add_nodes(
                 list(new_libs),
@@ -53,5 +54,10 @@ class GraphManager:
     def save(self, graph: net.Network, path: str):
         """ Save any graph (with possible options) """
         # For debugging graph view
-        graph.show_buttons(filter_=['nodes'])
+        # graph.show_buttons(filter_=['nodes'])
+
+        # :param smooth_type: Possible options are dynamic, continuous, discrete,
+        #                     diagonalCross, straightCross, horizontal, vertical,
+        #                     curvedCW, curvedCCW, cubicBezier
+        graph.set_edge_smooth('curvedCW')
         graph.save_graph(path)
