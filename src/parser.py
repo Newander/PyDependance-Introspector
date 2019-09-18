@@ -55,8 +55,8 @@ class Parser:
         self.linker.gather_modules()
         self.linker.build_import_tree()
 
-    def get_import_graph(self, path: str):
-        graph = self.import_graph.create_import_graph()
+    def get_import_graph(self, path: str, width: int, height: int):
+        graph = self.import_graph.create_import_graph(width, height)
         self.import_graph.save(graph, path)
 
     def print_stats(self):

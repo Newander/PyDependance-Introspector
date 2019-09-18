@@ -8,18 +8,21 @@ from src.tree import Module
 
 class GraphManager:
     """ Needed to create and draw graphs """
-    height = 1000  # pixels
-    width = 1000  # pixels
 
     def __init__(self, linker: Linker):
         self.linker = linker
 
-    def create_import_graph(self):
-        """ Creates graph from import objects in Linker """
+    def create_import_graph(self,width: int = 1600, height: int = 1000):
+        """ Creates graph from import objects in Linker
+
+        :param width: pixels
+        :param height: pixels
+        :return: network graph with all imports as connected nodes
+        """
         Edge = namedtuple('Edge', 'to_ from_')
         graph = net.Network(
-            height=f'{self.height}px',
-            width=f'{self.width}px',
+            height=f'{height}px',
+            width=f'{width}px',
             directed=True
         )
 
@@ -60,4 +63,5 @@ class GraphManager:
         #                     diagonalCross, straightCross, horizontal, vertical,
         #                     curvedCW, curvedCCW, cubicBezier
         graph.set_edge_smooth('curvedCW')
+
         graph.save_graph(path)
