@@ -2,6 +2,8 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Dict, List
 
+from src.code_objs.line import VariableLine
+from src.code_objs.variables import Variable
 from src.drawer import GraphManager
 from src.linker import Linker
 from src.tree import Folder
@@ -63,3 +65,36 @@ class Parser:
         print(
             self, f'The project have {self.root.calculate_lines()} code lines', sep='\n'
         )
+
+    def all_variables(self) -> List[Variable]:
+        """ Gather all variables in the project """
+        result = []
+        for module in self.root.list_modules():
+            result.extend(module.global_variables)
+            result.extend(
+                code_line
+                for function in module.functions
+                for code_line in function.body
+                if isinstance(code_line, Variable)
+            )
+            result.extend(
+                code_line
+                for _class_ in module.classes
+                for code_line in _class_.body
+                if isinstance(code_line, Variable)
+            )
+
+        for module in self.root.list_modules():
+            for object_list in (module.classes, module.functions):
+                for code_block in object_list:
+                    for code_line in code_block.body:
+                        if isinstance(code_line, VariableLine):
+                            result.append(
+                                Variable(
+                                    name=Variable.parse_name(code_line),
+                                    module_import_path=module.abs_import,
+                                    body=[code_line]
+                                )
+                            )
+
+        return result

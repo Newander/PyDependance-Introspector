@@ -1,6 +1,6 @@
 from itertools import zip_longest
 from pathlib import Path
-from typing import Type
+from typing import Iterable, Type
 
 from src.code_objs.classes import Class
 from src.code_objs.functions import Function
@@ -38,8 +38,8 @@ class Module:
         self.path = path
         self.abs_import = make_relative_import(path, project_root)
 
-        if path == Path('/home/sgavrilov/PycharmProjects/mi-backend-py/scheduled/executor.py'):
-            print(123)
+        # if path == Path('/home/sgavrilov/PycharmProjects/mi-backend-py/scheduled/executor.py'):
+        #     print(123)
 
         # Remove all empty lines
         self.content = []
@@ -156,17 +156,16 @@ class Folder:
     def parse_dir(self):
         """ Extract all sub dirs into objects """
         for file in self.path.iterdir():
-            obj_path = self.path / file
             if (
                     file.is_dir()
                     and not file.name.startswith('venv')
                     and file.name[0] not in ('.', '_')
                     and file.name not in Folder.ignore_list
             ):
-                self.sub_folders.append(Folder(dir_path=obj_path, root_path=self.root_path))
+                self.sub_folders.append(Folder(dir_path=file, root_path=self.root_path))
             elif file.suffix == '.py':
                 self.modules.append(
-                    Module(path=obj_path, project_root=self.root_path)
+                    Module(path=file, project_root=self.root_path)
                 )
 
         for folder in self.sub_folders:
@@ -175,10 +174,6 @@ class Folder:
     def parse_modules(self):
         """ Parse all import definitions """
         for module in self.modules:
-            if module.path == Path(
-                    '/home/sgavrilov/PycharmProjects/mi-backend-py/scheduled/executor.py'):
-                print(123)
-
             module.parse_imports()
             module.parse_global_variables()
             module.parse_objects(module.classes, ClassLine, Class)
@@ -207,7 +202,7 @@ class Folder:
             yield from folder_module.get_module_names()
 
     def calculate_lines(self):
-        """ Caluclates only code lines in modules and sub folders """
+        """ Calculates only code lines in modules and sub folders """
         return sum(
             [len(module.content) for module in self.modules] +
             [
@@ -215,3 +210,10 @@ class Folder:
                 for folder_module in self.sub_folders
             ]
         )
+
+    def list_modules(self) -> Iterable[Module]:
+        """ Yielding all modules in this folder and sub folders """
+        yield from self.modules
+
+        for folder in self.sub_folders:
+            yield from folder.list_modules()

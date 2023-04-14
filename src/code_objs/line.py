@@ -233,8 +233,6 @@ class ImportLine(LineType):
             self.import_from = import_model.source
             self.import_what = [import_model]
 
-        print('Checkpoint')
-
 
 class EmptyLine(LineType):
     """ Managing empty lines """
