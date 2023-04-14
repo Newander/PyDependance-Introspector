@@ -39,7 +39,7 @@ class Class(CodeObject):
     @classmethod
     def parse_name(cls, def_line: 'ClassLine'):
         try:
-            class_name = def_line.cline.split()[1]
+            class_name = def_line.code_line.split()[1]
         except IndexError as err:
             raise err
 

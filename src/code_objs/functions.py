@@ -24,6 +24,6 @@ class Function(CodeObject):
 
     @classmethod
     def parse_name(cls, def_line: 'FunctionLine'):
-        fun_name = def_line.cline.split()[1]
+        fun_name = def_line.code_line.split()[1]
         idx = fun_name.find('(')
         return fun_name[:idx]

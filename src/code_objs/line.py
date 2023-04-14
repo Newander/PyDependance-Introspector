@@ -37,7 +37,7 @@ def extract_one_object(iter_str_lines: Iterator[str]) -> list[str] | None:
     except StopIteration:
         return None
 
-    line_stack = [str_line]
+    line_stack = [str_line.rstrip('\\')]
     are_pars_opened = []
     while True:
         if not str_line.strip():
@@ -63,7 +63,7 @@ def extract_one_object(iter_str_lines: Iterator[str]) -> list[str] | None:
         except StopIteration:
             break
 
-        line_stack.append(str_line)
+        line_stack.append(str_line.rstrip('\\'))
 
     return line_stack
 
@@ -106,14 +106,14 @@ def parse_line_iter(iter_str_lines: Iterator[str]) -> Union['LineType', 'CodeLin
 class CodeLine(UserString):
     """ Object representation of the code essentials """
 
-    def __init__(self, line: str):
-        self.indent = len(line) - len(line.lstrip(' '))
+    def __init__(self, str_line: str):
+        self.indent = len(str_line) - len(str_line.lstrip(' '))
 
-        line = line.rstrip(' \t\n')
+        str_line = str_line.rstrip(' \t\n')
 
-        super(CodeLine, self).__init__(line)
+        super(CodeLine, self).__init__(str_line)
 
-        self.parsed = set(line.split())
+        self.parsed = set(str_line.split())
 
     def has_import(self):
         if 'import' not in self.parsed:
@@ -147,24 +147,27 @@ class CodeLine(UserString):
 
 
 class LineType(ABC):
-    def __init__(self, cline: 'CodeLine'):
-        self.cline = cline
-        self.indent = cline.indent
+    def __init__(self, code_line: 'CodeLine'):
+        self.code_line = code_line
+        self.indent = code_line.indent
 
     def __repr__(self):
-        return ' ' * self.indent + repr(self.cline)
+        return ' ' * self.indent + repr(self.code_line)
 
     def __bool__(self):
-        return bool(self.cline)
+        return bool(self.code_line)
 
 
 class ImportLine(LineType):
     """ Manging lines with imports """
 
-    def __init__(self, cline: 'CodeLine'):
-        super(ImportLine, self).__init__(cline)
+    def __init__(self, code_line: 'CodeLine'):
+        # if '(' in code_line or '"' in code_line or '\\' in code_line:
+        #     print(code_line)
 
-        import_list = self.cline.split()
+        super(ImportLine, self).__init__(code_line)
+
+        import_list = [part for part in self.code_line.split() if part and part not in '\\"()']
 
         try:
             as_idx = import_list.index('as') + 1
@@ -204,8 +207,8 @@ class CommentLine(LineType):
 class ClassLine(LineType):
     """ todo: """
 
-    def __init__(self, cline: 'CodeLine'):
-        super(ClassLine, self).__init__(cline)
+    def __init__(self, code_line: 'CodeLine'):
+        super(ClassLine, self).__init__(code_line)
 
 
 class FunctionLine(LineType):

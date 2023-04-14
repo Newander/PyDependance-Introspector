@@ -24,5 +24,5 @@ class Variable(CodeObject):
 
     @classmethod
     def parse_name(cls, def_line: 'VariableLine'):
-        name = def_line.cline.split('=', maxsplit=1)[0].strip()
+        name = def_line.code_line.split('=', maxsplit=1)[0].strip()
         return name
