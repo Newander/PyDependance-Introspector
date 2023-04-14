@@ -3,7 +3,7 @@ from collections import UserString
 from typing import Iterator, Union
 
 pars = {
-    '(': ')', '[': ']', '{': '}'
+    '(': ')', '[': ']', '{': '}', '"""': '"""'
 }
 
 
@@ -46,15 +46,21 @@ def extract_one_object(iter_str_lines: Iterator[str]) -> list[str] | None:
         last_symbol = str_line.rstrip()[-1]
 
         if are_pars_opened:
-            if last_symbol in pars.values():
-                if pars[are_pars_opened[-1]] == last_symbol:
-                    try:
-                        are_pars_opened.pop(-1)
-                    except IndexError:
+            if (
+                    (last_symbol in pars.values() and pars[are_pars_opened[-1]] == last_symbol)
+                    or ('"""' in str_line and pars[are_pars_opened[-1]] == '"""')
+            ):
+                try:
+                    are_pars_opened.pop(-1)
+                    if not are_pars_opened:
                         break
+                except IndexError:
+                    break
         else:
             if last_symbol in pars:
                 are_pars_opened.append(last_symbol)
+            elif '"""' in str_line:
+                are_pars_opened.append('"""')
             elif last_symbol not in ',\\':
                 break
 
@@ -68,7 +74,7 @@ def extract_one_object(iter_str_lines: Iterator[str]) -> list[str] | None:
     return line_stack
 
 
-def parse_line_iter(iter_str_lines: Iterator[str]) -> Union['LineType', 'CodeLine', None]:
+def parse_objects_from_file(iter_str_lines: Iterator[str]) -> Union['LineType', 'CodeLine', None]:
     """ Concatenates many-lines into one line and returning the right management object for this new CodeLine
 
     :param iter_str_lines: the iterable over the python module

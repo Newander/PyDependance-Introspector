@@ -1,10 +1,10 @@
-import typing as t
 from itertools import zip_longest
 from pathlib import Path
+from typing import Type
 
 from src.code_objs.classes import Class
 from src.code_objs.functions import Function
-from src.code_objs.line import ClassLine, FunctionLine, ImportLine, VariableLine, parse_line_iter
+from src.code_objs.line import ClassLine, CodeLine, FunctionLine, ImportLine, VariableLine, parse_objects_from_file
 from src.code_objs.variables import Variable
 
 
@@ -28,27 +28,27 @@ class Module:
     """
         One python module as code
     """
-    imports: t.List[ImportLine]
-    classes: t.List[Class]
-    functions: t.List[Function]
+    imports: list[ImportLine]
+    classes: list[Class]
+    functions: list[Function]
 
     def __init__(self, path: Path, project_root: Path):
         self.path = path
         self.abs_import = make_relative_import(path, project_root)
 
-        # if path == Path('/home/sgavrilov/PycharmProjects/mi-backend-py/scheduled/reports/reports.py'):
-        #     print(123)
+        if path == Path('/home/sgavrilov/PycharmProjects/mi-backend-py/scheduled/executor.py'):
+            print(123)
 
         # Remove all empty lines
         self.content = []
         i_file = self.path.open(encoding='utf-8')
         while True:
-            cline = parse_line_iter(i_file)
+            code_line: CodeLine = parse_objects_from_file(i_file)
 
-            if cline is None:
+            if code_line is None:
                 break
 
-            self.content.append(cline)
+            self.content.append(code_line)
 
         # Module content
         self.imports = list()
@@ -72,58 +72,45 @@ class Module:
 
         raise KeyError
 
-    def parse_classes(self):
-        """ Creates Class objects for all modules from the ClassLines
-        """
+    def parse_objects(self,
+                      container: list,
+                      parsing_line_cls: Type[ClassLine | FunctionLine],
+                      parsing_cls: Type[Class | Function]):
+        """ Parsing loop for Classes or Functions """
         line_iter = iter(self.content)
         end_line = None
         while True:
             try:
-                cline = next(line_iter) if end_line is None else end_line
+                code_line = next(line_iter) if end_line is None else end_line
             except StopIteration:
                 break
 
-            if isinstance(cline, ClassLine):
+            if isinstance(code_line, parsing_line_cls):
                 # todo: problem with parsing empty(?) class declarations
-                cls, end_line = Class.parse(cline, line_iter, self.abs_import)
-                self.classes.append(cls)
+                cls, end_line = parsing_cls.parse(code_line, line_iter, self.abs_import)
+                container.append(cls)
             else:
                 end_line = None
-
-    def parse_functions(self):
-        """ Creates Function objects for all modules from the FunctionLines
-        """
-        line_iter = iter(self.content)
-        while True:
-            try:
-                cline = next(line_iter)
-            except StopIteration:
-                break
-
-            if isinstance(cline, FunctionLine):
-                cls, end_line = Function.parse(cline, line_iter, self.abs_import)
-                self.functions.append(cls)
 
     def parse_global_variables(self):
         """ Extracting global variables
         """
-        line_iter = iter(self.content)
-        while True:
-            try:
-                cline = next(line_iter)
-            except StopIteration:
-                break
-
-            if isinstance(cline, VariableLine):
-                cls, end_line = Variable.parse(cline, line_iter, self.abs_import)
-                self.global_variables.append(cls)
+        for code_line in self.content:
+            if isinstance(code_line, VariableLine) and code_line.indent == 0:
+                self.global_variables.append(
+                    Variable(
+                        name=Variable.parse_name(code_line),
+                        module_import_path=self.abs_import,
+                        body=[code_line]
+                    )
+                )
 
     def parse_imports(self):
         """ Read all imported objects in the module """
 
         self.imports = [
-            cline for cline in self.content
-            if isinstance(cline, ImportLine)
+            code_line for code_line in self.content
+            if isinstance(code_line, ImportLine)
         ]
 
 
@@ -139,8 +126,8 @@ class Folder:
 
         self.import_range = ''
 
-        self.sub_folders: t.List[Folder] = []
-        self.modules: t.List[Module] = []
+        self.sub_folders: list[Folder] = []
+        self.modules: list[Module] = []
 
     def __repr__(self):
         return f'Folder {self.path}'
@@ -181,10 +168,14 @@ class Folder:
     def parse_modules(self):
         """ Parse all import definitions """
         for module in self.modules:
+            if module.path == Path(
+                    '/home/sgavrilov/PycharmProjects/mi-backend-py/scheduled/executor.py'):
+                print(123)
+
             module.parse_imports()
             module.parse_global_variables()
-            module.parse_classes()
-            module.parse_functions()
+            module.parse_objects(module.classes, ClassLine, Class)
+            module.parse_objects(module.functions, FunctionLine, Function)
 
         for folder in self.sub_folders:
             folder.parse_modules()

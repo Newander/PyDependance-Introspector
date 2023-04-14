@@ -1,6 +1,6 @@
 from typing import Callable, Iterable, Iterator
 
-from src.code_objs.line import CodeLine, EmptyLine, ObjectLines
+from src.code_objs.line import CodeLine, EmptyLine, LineType, ObjectLines
 
 
 def object_parser(
@@ -31,7 +31,7 @@ def object_parser(
 
 class CodeObject:
     def __init__(
-            self, name: str, module_import_path: str, body: list[CodeLine]
+            self, name: str, module_import_path: str, body: list[CodeLine | LineType]
     ):
         self.path = '.'.join([module_import_path, name])
         self.name = name
@@ -46,19 +46,19 @@ class CodeObject:
 
     @classmethod
     def parse(cls,
-              def_line: ObjectLines,
+              code_line: ObjectLines,
               file_lst: Iterable[ObjectLines],
               abs_module_import_path: str):
         """ Extracting all info about object into new instance """
         body = []
-        name = cls.parse_name(def_line)
+        name = cls.parse_name(code_line)
 
-        mline = None
-        for mline in file_lst:
-            if not isinstance(mline, EmptyLine) and \
-                    mline.indent == def_line.indent:
+        obj_line = None
+        for obj_line in file_lst:
+            if not isinstance(obj_line, EmptyLine) and \
+                    obj_line.indent == code_line.indent:
                 break
 
-            body.append(mline)
+            body.append(obj_line)
 
-        return cls(name, abs_module_import_path, body), mline
+        return cls(name, abs_module_import_path, body), obj_line
