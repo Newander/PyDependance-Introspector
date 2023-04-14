@@ -1,6 +1,7 @@
 from abc import ABC
 from collections import UserString
-from typing import Iterator, Union
+from dataclasses import dataclass
+from typing import Iterator, Self, Union
 
 pars = {
     '(': ')', '[': ']', '{': '}', '"""': '"""'
@@ -158,46 +159,81 @@ class LineType(ABC):
         self.indent = code_line.indent
 
     def __repr__(self):
-        return ' ' * self.indent + repr(self.code_line)
+        return f'<{self.__class__.__name__} {self.code_line}>'
 
     def __bool__(self):
         return bool(self.code_line)
 
 
+@dataclass
+class ImportModel:
+    """ Represent  """
+    raw: str
+    as_list: list[str]
+    module: str
+    alias: str | None
+    source: str
+
+    @classmethod
+    def from_imports_list(cls, import_str: str, import_from: str) -> Self:
+        clear_import_str = import_str.strip(' ,()')
+        as_list = clear_import_str.split()
+
+        return ImportModel(
+            raw=clear_import_str,
+            as_list=as_list,
+            module=as_list[0],
+            alias=as_list[-1] if 'as' in clear_import_str else None,
+            source=import_from
+        )
+
+    @classmethod
+    def from_import_single(cls, import_str: str) -> Self:
+        clear_import_str = import_str.strip(' ,()')
+        as_list = clear_import_str.split()
+        module_path = as_list[0]
+        if '.' in module_path:
+            source, module = module_path.rsplit('.', maxsplit=1)
+        else:
+            source = module = module_path
+
+        return ImportModel(
+            raw=clear_import_str,
+            as_list=as_list,
+            module=module,
+            alias=as_list[-1] if 'as' in clear_import_str else None,
+            source=source
+        )
+
+
 class ImportLine(LineType):
     """ Manging lines with imports """
+    import_from: str
+    import_what: list[ImportModel]
 
     def __init__(self, code_line: 'CodeLine'):
-        # if '(' in code_line or '"' in code_line or '\\' in code_line:
-        #     print(code_line)
-
         super(ImportLine, self).__init__(code_line)
 
-        import_list = [part for part in self.code_line.split() if part and part not in '\\"()']
+        if code_line.startswith('from'):
+            # 1+ objects from module
+            _, source, _, imports = code_line.split(maxsplit=3)
+            self.import_from = source
+            self.import_what = []
 
-        try:
-            as_idx = import_list.index('as') + 1
-        except ValueError:
-            self.alias = None
+            for import_str in imports.strip('()').replace('\\', '').split(','):
+                clear_import_str = import_str.strip()
+                if not clear_import_str:
+                    continue
+                if ',' in clear_import_str:
+                    raise Exception(code_line)
+                self.import_what.append(ImportModel.from_imports_list(import_str, self.import_from))
         else:
-            self.alias = import_list[as_idx]
-            import_list = import_list[:as_idx]
+            # 1 module or object
+            import_model = ImportModel.from_import_single(code_line.split(maxsplit=1)[-1])
+            self.import_from = import_model.source
+            self.import_what = [import_model]
 
-        import_list = [word.strip(',') for word in import_list]
-        from_clause = import_list[0] == 'from'
-
-        if from_clause:
-            self.import_from = import_list[1]
-            self.import_what = import_list[3:]
-        else:
-            import_obj = import_list[1]
-
-            if '.' not in import_obj:
-                self.import_from = import_obj
-                self.import_what = '__all__'
-            else:
-                self.import_from = '.'.join(import_obj.split('.')[:-1])
-                self.import_what = import_obj.split('.')[-1]
+        print('Checkpoint')
 
 
 class EmptyLine(LineType):

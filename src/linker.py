@@ -3,7 +3,7 @@ from collections import UserDict
 from src.tree import Folder, Module
 
 
-class Linker(UserDict):
+class Linker(UserDict[str, dict]):
     """ Consists links between modules in the project:
         Imports, classes and functions
     """
@@ -16,8 +16,7 @@ class Linker(UserDict):
         self.libraries = set()
 
     def __repr__(self):
-        return \
-            f'Project {self.root}'
+        return f'<Project {self.root}>'
 
     def get_module_by_import(self, abs_import) -> Module:
         return self[abs_import]['module']
@@ -40,26 +39,12 @@ class Linker(UserDict):
             module = module_data['module']  # type: Module
             for import_ in module.imports:
                 abs_import = import_.import_from
-                new_import = {}
 
                 try:
                     imported_module = self.get_module_by_import(abs_import)
                 except KeyError:
                     # todo: check 'src.code_objs.line' module (bug)
                     self.libraries.add(abs_import)
-
-                    new_import.update(module=import_.import_from, objects=import_.import_what)
+                    self[module.abs_import]['imports'].append(import_)
                 else:
-                    objects_to_import = []
-                    for name in import_.import_what:
-                        if name == '*':
-                            objects_to_import.extend(imported_module.global_variables)
-                            objects_to_import.extend(imported_module.functions)
-                            objects_to_import.extend(imported_module.classes)
-                            # todo: here must be also imports, but the functionality is not ready yet
-                        else:
-                            objects_to_import.append(imported_module.get_object_by_name(name))
-
-                    new_import.update(module=imported_module, object=objects_to_import)
-                finally:
-                    self[module.abs_import]['imports'].append(new_import)
+                    self[module.abs_import]['imports'].append(imported_module)

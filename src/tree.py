@@ -115,6 +115,11 @@ class Module:
             if isinstance(code_line, ImportLine)
         ]
 
+    def list_objects(self) -> list[DefinitiveObjects]:
+        """ Returns all valuable objects in a list (functions, classes and globals) """
+        # todo: here must be also imports, but the functionality is not ready yet
+        return self.classes + self.functions + self.global_variables
+
 
 class Folder:
     """
