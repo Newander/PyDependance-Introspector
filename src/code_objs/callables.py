@@ -1,14 +1,12 @@
-import typing as t
+from typing import Callable, Iterable, Iterator
 
-from src.code_objs.line import ClassLine, EmptyLine
-from src.code_objs.line import CodeLine
-from src.code_objs.line import FunctionLine
+from src.code_objs.line import CodeLine, EmptyLine, ObjectLines
 
 
 def object_parser(
-        iterator: t.Iterator['CodeLine'],
-        handler: t.Callable,
-        condition: t.Callable
+        iterator: Iterator[CodeLine],
+        handler: Callable,
+        condition: Callable
 ):
     end_line = None
     while True:
@@ -33,7 +31,7 @@ def object_parser(
 
 class CodeObject:
     def __init__(
-            self, name: str, module_import_path: str, body: t.List['CodeLine']
+            self, name: str, module_import_path: str, body: list[CodeLine]
     ):
         self.path = '.'.join([module_import_path, name])
         self.name = name
@@ -48,8 +46,8 @@ class CodeObject:
 
     @classmethod
     def parse(cls,
-              def_line: 't.Union[ClassLine, FunctionLine, CodeLine]',
-              file_lst: 't.Iterable[t.Union[ClassLine, FunctionLine, CodeLine]]',
+              def_line: ObjectLines,
+              file_lst: Iterable[ObjectLines],
               abs_module_import_path: str):
         """ Extracting all info about object into new instance """
         body = []

@@ -1,6 +1,10 @@
-import typing as t
-
+from abc import ABC
 from collections import UserString
+from typing import Iterator, Union
+
+pars = {
+    '(': ')', '[': ']', '{': '}'
+}
 
 
 def count_pars(line: str):
@@ -25,71 +29,82 @@ def count_pars(line: str):
     return pars_count
 
 
-def check_many_liners(mline: str, prev_pars=0):
+def extract_one_object(iter_str_lines: Iterator[str]) -> list[str] | None:
+    """ Extracting one object: from definition till the end through several lines """
+
+    try:
+        str_line = next(iter_str_lines)
+    except StopIteration:
+        return None
+
+    line_stack = [str_line]
+    are_pars_opened = []
+    while True:
+        if not str_line.strip():
+            break
+
+        last_symbol = str_line.rstrip()[-1]
+
+        if are_pars_opened:
+            if last_symbol in pars.values():
+                if pars[are_pars_opened[-1]] == last_symbol:
+                    try:
+                        are_pars_opened.pop(-1)
+                    except IndexError:
+                        break
+        else:
+            if last_symbol in pars:
+                are_pars_opened.append(last_symbol)
+            elif last_symbol not in ',\\':
+                break
+
+        try:
+            str_line = next(iter_str_lines)
+        except StopIteration:
+            break
+
+        line_stack.append(str_line)
+
+    return line_stack
+
+
+def parse_line_iter(iter_str_lines: Iterator[str]) -> Union['LineType', 'CodeLine', None]:
+    """ Concatenates many-lines into one line and returning the right management object for this new CodeLine
+
+    :param iter_str_lines: the iterable over the python module
     """
+    line_stack = extract_one_object(iter_str_lines)
 
-    :param mline:
-    :param prev_pars:
-    :return:
-    """
-    if not mline.strip():
-        return False
+    if line_stack is None:
+        return
 
-    if mline.rstrip()[-1] == '\\':
-        return True
+    instance = CodeLine(
+        (' '.join(line_stack)).replace('\n', '')
+    )
 
-    if count_pars(mline) > 0:
-        return True
+    if instance.has_import():
+        return ImportLine(instance)
 
-    return False
+    if instance.is_empty():
+        return EmptyLine(instance)
+
+    if instance.is_comment():
+        return CommentLine(instance)
+
+    if instance.have_def():
+        return FunctionLine(instance)
+
+    if instance.is_class():
+        return ClassLine(instance)
+
+    if instance.is_a_variable():
+        return VariableLine(instance)
+
+    return instance
 
 
 class CodeLine(UserString):
     """ Object representation of the code essentials """
-
-    @classmethod
-    def parse_line_iter(cls, iter_lines: t.Iterator[str]):
-        """ Concatenates many-lines into one line and returning the right management object for this new CodeLine
-
-        :param iter_lines: the iterable over the python module
-        """
-
-        try:
-            line = next(iter_lines)
-        except StopIteration:
-            return None
-
-        line_stack = [line]
-        pars = count_pars(line)
-        while check_many_liners(line, pars):
-            try:
-                line = next(iter_lines)
-            except StopIteration:
-                break
-
-            pars += count_pars(line)
-            line_stack.append(line)
-
-        instance = cls(
-            (' '.join(line_stack)).replace('\n', '')
-        )
-
-        if instance.has_import():
-            return ImportLine(instance)
-
-        if instance.is_empty():
-            return EmptyLine(instance)
-
-        if instance.is_comment():
-            return CommentLine(instance)
-
-        if instance.have_def():
-            return FunctionLine(instance)
-
-        if instance.is_class():
-            return ClassLine(instance)
-
-        return instance
 
     def __init__(self, line: str):
         self.indent = len(line) - len(line.lstrip(' '))
@@ -120,6 +135,10 @@ class CodeLine(UserString):
     def is_empty(self):
         return not bool(self)
 
+    def is_a_variable(self):
+        maybe_var = self.split('=', maxsplit=1)
+        return len(maybe_var) == 2 and ' ' not in maybe_var[0].strip()
+
     def is_comment(self):
         try:
             return self.data.lstrip(' \t')[0] == '#'
@@ -127,7 +146,7 @@ class CodeLine(UserString):
             return False
 
 
-class LineType:
+class LineType(ABC):
     def __init__(self, cline: 'CodeLine'):
         self.cline = cline
         self.indent = cline.indent
@@ -175,7 +194,7 @@ class ImportLine(LineType):
 class EmptyLine(LineType):
     """ Managing empty lines """
 
-    __name__ = 'EmptLine'
+    __name__ = 'EmptyLine'
 
 
 class CommentLine(LineType):
@@ -183,11 +202,18 @@ class CommentLine(LineType):
 
 
 class ClassLine(LineType):
-    """ Managing comment lines """
+    """ todo: """
 
     def __init__(self, cline: 'CodeLine'):
         super(ClassLine, self).__init__(cline)
 
 
 class FunctionLine(LineType):
-    """ Managing comment lines """
+    """ todo: """
+
+
+class VariableLine(LineType):
+    """ todo: """
+
+
+ObjectLines = ClassLine | FunctionLine | VariableLine

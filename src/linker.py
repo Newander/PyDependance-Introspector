@@ -40,6 +40,7 @@ class Linker(UserDict):
             module = module_data['module']  # type: Module
             for import_ in module.imports:
                 abs_import = import_.import_from
+                new_import = {}
 
                 try:
                     imported_module = self.get_module_by_import(abs_import)
@@ -47,9 +48,9 @@ class Linker(UserDict):
                     # todo: check 'src.code_objs.line' module (bug)
                     self.libraries.add(abs_import)
 
-                    new_import = dict(module=import_.import_from, objects=import_.import_what)
+                    new_import.update(module=import_.import_from, objects=import_.import_what)
                 else:
-                    new_import = dict(
+                    new_import.update(
                         module=imported_module,
                         object=[imported_module.get_object_by_name(name) for name in import_.import_what]
                     )

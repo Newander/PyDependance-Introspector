@@ -1,10 +1,8 @@
 import typing as t
-from functools import partial
 
-from src.code_objs.callables import CodeObject, object_parser
+from src.code_objs.callables import CodeObject
 from src.code_objs.functions import Function
-from src.code_objs.line import ClassLine, FunctionLine
-from src.code_objs.line import CodeLine
+from src.code_objs.line import ClassLine, CodeLine, FunctionLine
 
 
 class Class(CodeObject):
@@ -40,6 +38,10 @@ class Class(CodeObject):
 
     @classmethod
     def parse_name(cls, def_line: 'ClassLine'):
-        class_name = def_line.cline.split()[1]
+        try:
+            class_name = def_line.cline.split()[1]
+        except IndexError as err:
+            raise err
+
         idx = min((class_name.find(':'), class_name.find('(')))
         return class_name[:idx]

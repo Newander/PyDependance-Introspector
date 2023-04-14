@@ -2,11 +2,11 @@ from typing import Iterator
 
 from src.code_objs.callables import CodeObject
 from src.code_objs.line import FunctionLine
+from src.code_objs.line import VariableLine
 
 
-class Function(CodeObject):
-    """ Representation of the Python Function
-    todo: define is this a function or method
+class Variable(CodeObject):
+    """ Represent in-variable line
     """
 
     @classmethod
@@ -23,7 +23,6 @@ class Function(CodeObject):
         return all(['def' == parsed[0], 'self' not in parsed[1]])
 
     @classmethod
-    def parse_name(cls, def_line: 'FunctionLine'):
-        fun_name = def_line.cline.split()[1]
-        idx = fun_name.find('(')
-        return fun_name[:idx]
+    def parse_name(cls, def_line: 'VariableLine'):
+        name = def_line.cline.split('=', maxsplit=1)[0].strip()
+        return name

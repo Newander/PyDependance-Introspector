@@ -4,7 +4,8 @@ from pathlib import Path
 
 from src.code_objs.classes import Class
 from src.code_objs.functions import Function
-from src.code_objs.line import ClassLine, CodeLine, FunctionLine, ImportLine
+from src.code_objs.line import ClassLine, FunctionLine, ImportLine, VariableLine, parse_line_iter
+from src.code_objs.variables import Variable
 
 
 def make_relative_import(local_path, root_path):
@@ -35,12 +36,14 @@ class Module:
         self.path = path
         self.abs_import = make_relative_import(path, project_root)
 
+        # if path == Path('/home/sgavrilov/PycharmProjects/mi-backend-py/scheduled/reports/reports.py'):
+        #     print(123)
+
         # Remove all empty lines
         self.content = []
-        i_file = self.path.open('r', encoding='utf-8')
-
+        i_file = self.path.open(encoding='utf-8')
         while True:
-            cline = CodeLine.parse_line_iter(i_file)
+            cline = parse_line_iter(i_file)
 
             if cline is None:
                 break
@@ -51,6 +54,7 @@ class Module:
         self.imports = list()
         self.classes = list()
         self.functions = list()
+        self.global_variables = list()
 
     def __hash__(self):
         return hash(str(self.path))
@@ -58,10 +62,10 @@ class Module:
     def __repr__(self):
         return f'Module {self.path}'
 
-    def get_object_by_name(self, obj_name):
-        """ Вытащить объект по его имени """
+    def get_object_by_name(self, obj_name: str):
+        """ Extract the object by his name """
 
-        for obj_list in [self.classes, self.functions]:
+        for obj_list in [self.classes, self.functions, self.global_variables]:
             for obj in obj_list:
                 if obj.name == obj_name:
                     return obj
@@ -80,7 +84,7 @@ class Module:
                 break
 
             if isinstance(cline, ClassLine):
-                # todo: problem with parsing empty(?) class declaraions in src/code_objs/line.py:167
+                # todo: problem with parsing empty(?) class declarations
                 cls, end_line = Class.parse(cline, line_iter, self.abs_import)
                 self.classes.append(cls)
             else:
@@ -99,6 +103,20 @@ class Module:
             if isinstance(cline, FunctionLine):
                 cls, end_line = Function.parse(cline, line_iter, self.abs_import)
                 self.functions.append(cls)
+
+    def parse_global_variables(self):
+        """ Extracting global variables
+        """
+        line_iter = iter(self.content)
+        while True:
+            try:
+                cline = next(line_iter)
+            except StopIteration:
+                break
+
+            if isinstance(cline, VariableLine):
+                cls, end_line = Variable.parse(cline, line_iter, self.abs_import)
+                self.global_variables.append(cls)
 
     def parse_imports(self):
         """ Read all imported objects in the module """
@@ -145,9 +163,12 @@ class Folder:
         """ Extract all sub dirs into objects """
         for file in self.path.iterdir():
             obj_path = self.path / file
-            if file.is_dir() and \
-                    file.name[0] not in ('.', '_') and \
-                    file.name not in Folder.ignore_list:
+            if (
+                    file.is_dir()
+                    and not file.name.startswith('venv')
+                    and file.name[0] not in ('.', '_')
+                    and file.name not in Folder.ignore_list
+            ):
                 self.sub_folders.append(Folder(dir_path=obj_path, root_path=self.root_path))
             elif file.suffix == '.py':
                 self.modules.append(
@@ -161,6 +182,7 @@ class Folder:
         """ Parse all import definitions """
         for module in self.modules:
             module.parse_imports()
+            module.parse_global_variables()
             module.parse_classes()
             module.parse_functions()
 
