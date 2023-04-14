@@ -50,9 +50,16 @@ class Linker(UserDict):
 
                     new_import.update(module=import_.import_from, objects=import_.import_what)
                 else:
-                    new_import.update(
-                        module=imported_module,
-                        object=[imported_module.get_object_by_name(name) for name in import_.import_what]
-                    )
+                    objects_to_import = []
+                    for name in import_.import_what:
+                        if name == '*':
+                            objects_to_import.extend(imported_module.global_variables)
+                            objects_to_import.extend(imported_module.functions)
+                            objects_to_import.extend(imported_module.classes)
+                            # todo: here must be also imports, but the functionality is not ready yet
+                        else:
+                            objects_to_import.append(imported_module.get_object_by_name(name))
+
+                    new_import.update(module=imported_module, object=objects_to_import)
                 finally:
                     self[module.abs_import]['imports'].append(new_import)

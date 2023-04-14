@@ -7,6 +7,8 @@ from src.code_objs.functions import Function
 from src.code_objs.line import ClassLine, CodeLine, FunctionLine, ImportLine, VariableLine, parse_objects_from_file
 from src.code_objs.variables import Variable
 
+DefinitiveObjects = Class | Function | Variable
+
 
 def make_relative_import(local_path, root_path):
     """ Fill `self.import_range` attribute as classic import """
@@ -62,7 +64,7 @@ class Module:
     def __repr__(self):
         return f'Module {self.path}'
 
-    def get_object_by_name(self, obj_name: str):
+    def get_object_by_name(self, obj_name: str) -> DefinitiveObjects:
         """ Extract the object by his name """
 
         for obj_list in [self.classes, self.functions, self.global_variables]:

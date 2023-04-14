@@ -39,9 +39,12 @@ class Class(CodeObject):
     @classmethod
     def parse_name(cls, def_line: 'ClassLine'):
         try:
-            class_name = def_line.code_line.split()[1]
+            _, class_name = def_line.code_line.split(maxsplit=1)
         except IndexError as err:
             raise err
+
+        if not isinstance(class_name, str):
+            raise ValueError(def_line.code_line)
 
         idx = min((class_name.find(':'), class_name.find('(')))
         return class_name[:idx]
