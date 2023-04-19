@@ -1,6 +1,6 @@
 from typing import Callable, Iterable, Iterator
 
-from src.code_objs.line import CodeLine, EmptyLine, LineType, ObjectLines
+from src.py_parser.code_objs.line import CodeLine, EmptyLine, LineType, ObjectLines
 
 
 def object_parser(

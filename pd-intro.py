@@ -1,8 +1,7 @@
-import sys
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
-from src.parser import Parser
+from src import Parser
 
 parser = ArgumentParser()
 parser.add_argument('project_path', help='Path to introspected project')

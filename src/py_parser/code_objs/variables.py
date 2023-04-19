@@ -1,7 +1,7 @@
 from typing import Iterator
 
-from src.code_objs.callables import CodeObject
-from src.code_objs.line import VariableLine
+from src.py_parser.code_objs.callables import CodeObject
+from src.py_parser.code_objs.line import VariableLine
 
 
 class Variable(CodeObject):

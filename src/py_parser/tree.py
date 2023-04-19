@@ -2,10 +2,10 @@ from itertools import zip_longest
 from pathlib import Path
 from typing import Iterable, Type
 
-from src.code_objs.classes import Class
-from src.code_objs.functions import Function
-from src.code_objs.line import ClassLine, CodeLine, FunctionLine, ImportLine, VariableLine, parse_objects_from_file
-from src.code_objs.variables import Variable
+from src.py_parser.code_objs.classes import Class
+from src.py_parser.code_objs.functions import Function
+from src.py_parser.code_objs.line import ClassLine, CodeLine, FunctionLine, ImportLine, VariableLine, parse_objects_from_file
+from src.py_parser.code_objs.variables import Variable
 
 DefinitiveObjects = Class | Function | Variable
 

@@ -2,8 +2,8 @@ from collections import namedtuple
 
 from pyvis import network as net
 
-from src.linker import Linker
-from src.tree import Module
+from src.py_parser.linker import Linker
+from src.py_parser.tree import Module
 
 
 class GraphManager:

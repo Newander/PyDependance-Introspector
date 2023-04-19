@@ -1,6 +1,6 @@
 from collections import UserDict
 
-from src.tree import Folder, Module
+from src.py_parser.tree import Folder, Module
 
 
 class Linker(UserDict[str, dict]):

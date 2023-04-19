@@ -1,8 +1,8 @@
 import typing as t
 
-from src.code_objs.callables import CodeObject
-from src.code_objs.functions import Function
-from src.code_objs.line import ClassLine, CodeLine, FunctionLine
+from src.py_parser.code_objs.callables import CodeObject
+from src.py_parser.code_objs.functions import Function
+from src.py_parser.code_objs.line import ClassLine, CodeLine, FunctionLine
 
 
 class Class(CodeObject):

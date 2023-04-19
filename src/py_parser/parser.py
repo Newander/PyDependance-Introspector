@@ -2,11 +2,11 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Dict, List
 
-from src.code_objs.line import VariableLine
-from src.code_objs.variables import Variable
-from src.drawer import GraphManager
-from src.linker import Linker
-from src.tree import Folder
+from src.py_parser.code_objs.line import VariableLine
+from src.py_parser.code_objs.variables import Variable
+from src.py_parser.drawer import GraphManager
+from src.py_parser.linker import Linker
+from src.py_parser.tree import Folder
 
 
 def fit_lists_one_size(dict_with_lists: Dict[str, List]):
