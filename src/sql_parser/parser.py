@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Iterator, Sequence
+from typing import Any, Iterable, Iterator, Sequence
 
 from src.sql_parser.config import joinWords, separators, specificWords
 from src.sql_parser.models import CatPathString, Field
@@ -69,6 +69,7 @@ class Parser:
         assert first_word == 'select'
 
         select = {
+            'type': 'select',
             'fields': {},
             'table_name': None,
             'sub_query': {},
@@ -384,3 +385,67 @@ class Parser:
         result['fields'].update(offset_fields)
 
         return result, last_word_fields
+
+    def extract_field_from_select(self, operand: dict, arg_name: str, exact_type: type = None) -> Iterable[Any]:
+        for k, value in operand.items():
+            if k == arg_name and (exact_type is None or isinstance(value, exact_type)):
+                yield value
+
+            elif isinstance(value, list):
+                for element in value:
+                    if isinstance(element, dict):
+                        yield from self.extract_field_from_select(element, arg_name, exact_type)
+
+            elif isinstance(value, dict):
+                yield from self.extract_field_from_select(value, arg_name, exact_type)
+
+    def tables(self, len_filter: int = None) -> list[str]:
+        """ Gathering all table names and excluding aliases """
+
+        def handle_select_for_tables(select_op: dict) -> Iterable[str]:
+            for table in self.extract_field_from_select(select_op, 'table_name', exact_type=str):
+                yield table
+
+            for from_table in self.extract_field_from_select(select_op, 'from', exact_type=str):
+                yield from_table
+
+        def handle_select_for_aliases(select_op: dict) -> Iterable[str]:
+            for alias in self.extract_field_from_select(select_op, 'alias', exact_type=str):
+                yield alias
+
+        aliases = set()
+        all_tables = set()
+        for op in self.operands:
+            # Select
+            if isinstance(op, dict):
+                try:
+                    all_tables.update(handle_select_for_tables(op))
+                except Exception as err:
+                    all_tables.update(handle_select_for_tables(op))
+                aliases.update(handle_select_for_aliases(op))
+            # With
+            elif isinstance(op, list):
+                for with_select in op:
+                    all_tables.update(handle_select_for_tables(with_select))
+                    aliases.update(handle_select_for_aliases(with_select))
+
+        return [
+            table for table in all_tables
+            if table not in aliases and (not len_filter or len(table) > len_filter)
+        ]
+
+    def list_objects_with(self, with_key: str, filter_type: str = None) -> Iterable[dict]:
+        """ Yielding all possible objects having `with_key` inside """
+        for operand_group in self.operands:
+            for operand in ([operand_group] if isinstance(operand_group, dict) else operand_group):
+                for grouping_key in ('select', 'group_by', 'having', 'order_by', 'limits', 'offsets'):
+                    if (
+                            operand['type'] == grouping_key
+                            and with_key in operand
+                            and (not filter_type or operand['type'] == filter_type)
+                    ):
+                        yield operand
+
+                    for obj in self.extract_field_from_select(operand, grouping_key):
+                        if with_key in obj and (not filter_type or obj['type'] == filter_type):
+                            yield obj

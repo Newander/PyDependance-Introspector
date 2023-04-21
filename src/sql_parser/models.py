@@ -1,6 +1,6 @@
 from collections import UserString
 from dataclasses import dataclass
-from typing import Iterator, Self
+from typing import Iterator
 
 from src.sql_parser.utils import extract_between_curves, fill_dot_with_nulls
 

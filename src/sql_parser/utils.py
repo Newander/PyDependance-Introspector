@@ -1,6 +1,17 @@
+from dataclasses import dataclass
 from typing import Iterator
 
 from src.sql_parser.config import skips, spaces
+
+
+@dataclass
+class Template:
+    raw: str
+    regex: str
+    variable_names: list[str]
+
+    def __hash__(self):
+        return hash(repr(self))
 
 
 def parser(string: str) -> Iterator[str]:
@@ -19,6 +30,40 @@ def parser(string: str) -> Iterator[str]:
 
     if word:
         yield word
+
+
+def variables_extractor(template_str: str) -> Template:
+    """ Correctly extract variables [{...}] from table name and return the resulting model """
+    var = ''
+    variables = []
+    regex = '^'
+    adding = False
+    for s1 in template_str:
+        if s1 == '{':
+            # opening the caveats
+            adding = True
+            regex += var
+            var = ''
+        elif s1 == '}':
+            adding = False
+            variables.append(var)
+            var = ''
+            regex += '.*'
+        elif adding:
+            if s1 == '{':
+                raise ValueError(f'Interesting {s1=} {template_str=}')
+            var += s1
+        else:
+            var += s1
+
+    if var:
+        if adding:
+            variables.append(var)
+            regex += '.*'
+        else:
+            regex += var
+
+    return Template(template_str, regex + '$', variables)
 
 
 def extract_between_curves(iter_query: Iterator[str]) -> list[str]:

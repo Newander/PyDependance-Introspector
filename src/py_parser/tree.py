@@ -38,9 +38,6 @@ class Module:
         self.path = path
         self.abs_import = make_relative_import(path, project_root)
 
-        # if path == Path('/home/sgavrilov/PycharmProjects/mi-backend-py/scheduled/executor.py'):
-        #     print(123)
-
         # Remove all empty lines
         self.content = []
         i_file = self.path.open(encoding='utf-8')
