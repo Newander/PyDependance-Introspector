@@ -1,7 +1,6 @@
-pandas
-ipython
-plotly
-jupyter
-networkx
-matplotlib
-pyvis
+ipython~=9.5
+plotly~=6.3
+jupyter~=1.1
+networkx~=3.5
+matplotlib~=3.10
+pyvis~=0.3
