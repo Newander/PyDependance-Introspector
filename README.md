@@ -23,9 +23,9 @@ A CLI tool to parse Python projects and build a dependency tree of modules, clas
 1. Create and activate virtualenv (if not already):
     - macOS/Linux:
       ```bash
-      # Bash/Zsh
-      python3 -m venv .venv
-      source .venv/bin/activate
+          # Bash/Zsh
+          python3 -m venv .venv
+          source .venv/bin/activate
       ```
     - Windows:
       ```powershell
@@ -34,25 +34,25 @@ A CLI tool to parse Python projects and build a dependency tree of modules, clas
       ```
 2. Install dependencies:
    ```bash
-   pip install -r requirements.txt
+      pip install -r requirements.txt
    ```
 3. Run:
    ```bash
-   python main.py --help
+      python main.py --help
    ```
 
 ## 🧰 Example CLI Usage
 - Build dependency tree for a project:
   ```bash
-  python main.py tree --path /path/to/project --out tree.json
+      python main.py tree --path /path/to/project --out tree.json
   ```
 - Visualize as a graph:
   ```bash
-  python main.py draw --input tree.json --out graph.html
+      python main.py draw --input tree.json --out graph.html
   ```
 - Analyze usages:
   ```bash
-  python main.py analyze --path /path/to/project --report report.md
+      python main.py analyze --path /path/to/project --report report.md
   ```
 
 Note: CLI flags may evolve; run `--help` for the most up-to-date options.
